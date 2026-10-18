@@ -1,0 +1,16 @@
+# Keep the Docker context (and CDK asset staging) small and acyclic
+.git
+.venv
+.env
+data/corpus
+data/tenants
+results
+.index_cache
+.judge_cache
+.pytest_cache
+.ruff_cache
+__pycache__
+**/__pycache__
+infra/cdk/cdk.out
+*.egg-info
+.DS_Store

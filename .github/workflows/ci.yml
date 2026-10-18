@@ -1,0 +1,33 @@
+name: ci
+
+# Offline, deterministic: lint + the offline test suite. No API key, no
+# database, no AWS. Corpus- and CDK-dependent tests skip when their inputs
+# are absent, so this runs green on a clean checkout.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.13.1"
+
+      - name: Set up Python
+        run: uv python install 3.14
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check src tests scripts infra
+
+      - name: Test
+        run: uv run pytest -q

@@ -1,0 +1,46 @@
+name: eval-gate
+
+# The generation + judge steps cost API calls, so they run on demand and
+# weekly — not on every push. This is the "which is which": ci.yml is the
+# offline gate; this workflow is the end-to-end RAG-triad gate with secrets.
+#
+# A failing run writes results/eval_candidate.json and leaves eval/baseline.json
+# untouched; promote a candidate deliberately with `just accept`.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays 06:00 UTC
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.13.1"
+
+      - name: Set up Python
+        run: uv python install 3.14
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Fetch corpus
+        run: bash scripts/fetch_corpus.sh
+
+      - name: Run eval gate
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: uv run rcc eval
+
+      - name: Upload candidate baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-candidate
+          path: results/eval_candidate.json
+          if-no-files-found: ignore

@@ -1,0 +1,39 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Local data (corpus is fetched, not committed)
+data/corpus/
+data/tenants/*.json
+
+# Index cache
+.index_cache/
+
+# Eval outputs
+results/
+
+# Env
+.env
+
+# CDK / deploy state (never commit — may contain synthesized secrets)
+cdk.out/
+cdk-outputs.json
+.task_ip
+.cluster
+.service
+
+# Judge cache
+.judge_cache/
+
+# OS
+.DS_Store
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
