@@ -18,7 +18,9 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          version: "0.13.1"
+          # >= 0.13.4 required by the eMudhra CA incident: older uv ships its
+          # own CA bundle that still trusts the compromised intermediates.
+          version: "0.13.5"
 
       - name: Set up Python
         run: uv python install 3.14
