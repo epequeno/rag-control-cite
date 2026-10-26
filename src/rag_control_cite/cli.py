@@ -383,6 +383,11 @@ def _eval(args: list[str]) -> None:
         else:
             print("  no candidate to promote.")
 
+    # The workflow gates on this exit code. A failing gate that exits 0 is a
+    # green CI run with a red verdict — the gate must block the build.
+    if not r["passed"]:
+        raise SystemExit(1)
+
 
 def _accept(args: list[str]) -> None:
     from rag_control_cite.eval_gate import accept_baseline

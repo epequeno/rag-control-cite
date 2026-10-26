@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -162,3 +163,50 @@ def test_accept_promotes_candidate(gate, tmp_path) -> None:
     assert cfg.candidate_path.exists()
     assert accept_baseline(cfg.candidate_path, cfg.baseline_path) is True
     assert cfg.baseline_path.exists()
+
+
+@pytest.mark.parametrize(("passed", "exit_code"), [(False, 1), (True, None)])
+def test_cli_eval_exit_code_follows_gate(monkeypatch, passed, exit_code) -> None:
+    """The workflow gates on the exit code: a failing gate must fail the step."""
+    import rag_control_cite.embedder as embedder_mod
+    import rag_control_cite.eval_gate as eval_gate_mod
+    import rag_control_cite.generation as generation_mod
+    import rag_control_cite.index as index_mod
+    import rag_control_cite.ingestion as ingestion_mod
+    import rag_control_cite.judge as judge_mod
+    import rag_control_cite.query_set as query_set_mod
+    from rag_control_cite import cli
+
+    report = {
+        "passed": passed,
+        "n_queries": 1,
+        "metrics": {},
+        "ci_lower": {},
+        "n_failures": 0 if passed else 1,
+        "n_regressions": 0,
+        "n_known_failures": 0,
+        "baseline_loaded": True,
+        "candidate_written": not passed,
+        "failed_queries": [],
+    }
+    fake_index = SimpleNamespace(vectors=SimpleNamespace(shape=(1, 1)))
+    monkeypatch.setattr(ingestion_mod, "ingest", lambda: ([object()], None))
+    monkeypatch.setattr(embedder_mod, "OpenRouterEmbedder", lambda: object())
+    monkeypatch.setattr(index_mod, "build_or_load_index", lambda chunks, embedder: fake_index)
+    monkeypatch.setattr(query_set_mod, "generate_exact_term_queries", lambda chunks: [])
+    monkeypatch.setattr(query_set_mod, "split_queries", lambda queries, split: [])
+    monkeypatch.setattr(generation_mod, "Generator", lambda: object())
+    monkeypatch.setattr(judge_mod, "Judge", lambda: object())
+    monkeypatch.setattr(
+        eval_gate_mod,
+        "run_eval_gate",
+        lambda *args, **kwargs: SimpleNamespace(n_queries=1, as_dict=lambda: report),
+    )
+    monkeypatch.setattr(cli, "_write_result", lambda kind, payload: None)
+
+    if exit_code is None:
+        cli._eval([])
+    else:
+        with pytest.raises(SystemExit) as excinfo:
+            cli._eval([])
+        assert excinfo.value.code == exit_code

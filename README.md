@@ -125,7 +125,9 @@ just test          # pytest (offline)
 
 CI: `.github/workflows/ci.yml` runs lint + the offline test suite on every push. The
 end-to-end eval gate (generation + judge, which cost API calls) runs in
-`.github/workflows/eval-gate.yml` on demand and weekly with a stored secret.
+`.github/workflows/eval-gate.yml` on demand and weekly with a stored secret. A failing
+gate exits non-zero, leaves `eval/baseline.json` untouched, and uploads the candidate
+from `results/eval_candidate.json` — promote it deliberately with `just accept`.
 
 ## What broke and how I found it
 
